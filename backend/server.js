@@ -1,37 +1,66 @@
-import express from "express"
-import productRoute from "./routes/productRoute.js"
-import userRoutes from "./routes/userRoutes.js"
-import cookieParser from "cookie-parser"
-import { errorHandler, notFound } from "./middleware/errorMiddleware.js"
-import dotenv from "dotenv"
-dotenv.config()
-import connectDB from "./config/db.js"
-const app = express()
-
-// Body Parser Middleware
-
-app.use(express.json())
-app.use(express.urlencoded({ extended: true  }))
-
-//cookie parser middleware
-    app.use(cookieParser())
+import path from 'path';
+import express from 'express';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+dotenv.config();
+import connectDB from './config/db.js';
+import productRoutes from './routes/productRoute.js';
+import userRoutes from './routes/userRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import cors from "cors";
 
 
-connectDB()
-const port = process.env.PORT || 8080
+const port = process.env.PORT || 5000;
 
+connectDB();
 
-app.get('/', (req,res) => {
-    res.send("api is running")
-})
+const app = express();
+app.use(cors());
+const corsOptions = {
+  origin: "*",
+  credentials: true,
+  optionSuccessStatus: 200,
+};
 
-app.use('/api/products', productRoute)
-app.use('/api/users', userRoutes)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
+app.use('/api/products', productRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/upload', uploadRoutes);
 
-app.use(notFound)
-app.use(errorHandler)
+app.use(cors(corsOptions));
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
 
+app.get('/api/config/paypal', (req, res) =>
+  res.send({ clientId: process.env.PAYPAL_CLIENT_ID })
+);
 
+if (process.env.NODE_ENV === 'production') {
+  const __dirname = path.resolve();
+  app.use('/uploads', express.static('/var/data/uploads'));
+  app.use(express.static(path.join(__dirname, '/frontend/build')));
 
-app.listen(port, () => console.log(`Server is runing on port ${port}`))
+  app.get('*', (req, res) =>
+    res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'))
+  );
+} else {
+  const __dirname = path.resolve();
+  app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+  app.get('/', (req, res) => {
+    res.send('API is running....');
+  });
+}
+
+app.use(notFound);
+app.use(errorHandler);
+
+app.listen(port, () =>
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${port}`)
+);

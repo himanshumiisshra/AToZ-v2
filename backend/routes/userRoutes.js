@@ -1,26 +1,30 @@
-import express from "express";
-const router = express.Router();
-
+import express from 'express';
 import {
   authUser,
   registerUser,
-  logOutUser,
+  logoutUser,
   getUserProfile,
   updateUserProfile,
   getUsers,
   deleteUser,
   getUserById,
   updateUser,
-} from "../controllers/userController.js";
-import { protect, admin } from "../middleware/authMiddleware.js";
+} from '../controllers/userController.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
-router.route("/").post(registerUser).get(protect, admin , getUsers);
-router.post("/logout", logOutUser);
-router.post("/auth", authUser);
+const router = express.Router();
+
+router.route('/').post(registerUser).get(protect, admin, getUsers);
+router.post('/auth', authUser);
+router.post('/logout', logoutUser);
 router
-  .route("/profile")
+  .route('/profile')
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
-router.route("/:id").delete(protect, admin ,deleteUser).get(protect, admin ,getUserById).put(protect, admin ,updateUser);
+router
+  .route('/:id')
+  .delete(protect, admin, deleteUser)
+  .get(protect, admin, getUserById)
+  .put(protect, admin, updateUser);
 
 export default router;
